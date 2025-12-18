@@ -33,8 +33,15 @@ def main():
         
         if option == 1:
             task_name = input("\nEnter task name: ")
-            Tasks.create_task(task_name)
-            print('\n>-------------------- Task created successfully --------------------<\n')
+            tasks = Tasks.load_tasks()
+            does_task_exist = False
+            for task in tasks:
+                if task['name'].lower().strip() == task_name.lower().strip():
+                    print('\nTask already exists.\n')
+                    does_task_exist = True
+            if not does_task_exist:
+                Tasks.create_task(task_name)
+                print('\n>-------------------- Task created successfully --------------------<\n')
 
         elif option == 2:
             task_id = input('\nEnter the task_id: ')
@@ -49,10 +56,13 @@ def main():
             for task in tasks:
                 if task['id'] == task_id:
                     is_valid_id = True
+                    if task['status'] == new_status:
+                        print(f'\nStatus is already set to {new_status}.')
+                        break
                     task['status'] = new_status
                     task['updated_at'] = datetime.now().isoformat()
                     Tasks.save_tasks(tasks)
-                    print('\n >------------- Status Updated Successfully. ------------<')
+                    print('\n>------------- Status Updated Successfully. ------------<')
                     break
             
             if not is_valid_id:

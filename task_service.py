@@ -1,7 +1,8 @@
 import json
 import uuid
 from datetime import datetime 
-    
+from pathlib import Path
+
 from utils import filter_tasks
 
 
@@ -21,11 +22,14 @@ class TaskService:
         This method loads the json task data into a python list of task dicts.
         """
         if not self.file.exists():
-            raise FileExistsError("File path doesn't exist.")
-        
-        with open(self.file.name) as tasks_json:
-            tasks = json.load(tasks_json)
-            return tasks
+            print("\nFile path doesn't exist.\n")
+            return
+        try:
+            with open(self.file.name) as tasks_json:
+                tasks = json.load(tasks_json)
+                return tasks
+        except Exception as e:
+            print('\nError reading json file\n', e)
         
     def save_tasks(self, updated_tasks): 
         """
@@ -34,10 +38,19 @@ class TaskService:
         :param updated_tasks: It is the updated version of list of task dicts.
         """   
         if not self.file.exists():
-            raise RuntimeError(f"File path: {self.file.name} doesn't exist.")
-        
-        with open(self.file.name, 'w') as tasks_json:
-            json.dump(updated_tasks, tasks_json, indent=4)
+            print(f"File path: {self.file.name} doesn't exist.")
+            return
+        try:
+            # create new json file
+            new_file = Path('_tasks.json')
+            with open(new_file.name, 'w') as tasks_json:
+                json.dump(updated_tasks, tasks_json, indent=4)
+            # delete old json file
+            self.file.unlink()
+            # rename the newly created json file
+            new_file.rename('tasks.json')
+        except Exception as e:
+            print('\nError updating json file.\n')
             
     def create_task(self, task_name):
         """
@@ -70,12 +83,14 @@ class TaskService:
         :param end_time: end of the time window
         :param status: status of the task
         """
-        start = datetime.fromisoformat(start_time)
-        end = datetime.fromisoformat(end_time)
-        
+        try:
+            start = datetime.fromisoformat(start_time)
+            end = datetime.fromisoformat(end_time)
+        except Exception as e:
+            print('\nStart or End times are not in datetime format\n', e)
+            return
         tasks = self.load_tasks()
         filtered_tasks = filter_tasks(start, end, status, tasks)
-        
         print('\n----------------------------------------\n')
         for task in filtered_tasks:
             print(f"---> {task['name']}\n")
