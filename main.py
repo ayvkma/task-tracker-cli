@@ -7,11 +7,13 @@ def main():
     file = Path(input('Enter the path for the tasks-file: '))
     file_path = file.name
     
+    # Check for non existent or files other than JSON
     while not file.exists() or not file_path.endswith('.json'):
         print('\n----> Only existing JSON files are supported in this application.')
         file = Path(input('\nEnter the path for the tasks-file: '))
         file_path = file.name
-
+  
+    # Instance of Task Service
     Tasks = TaskService(file)
     
     while True:
@@ -22,62 +24,57 @@ def main():
     4. Exit the application.
         \n""")
         
-        
         option = input('Select one of the options above: ')
 
+        # Validate the selected option
         while not option.isdigit() or option not in ['1', '2', '3', '4']:
             print('\nOption must be a number between 1 and 4 both inclusive.\n')
             option = input('Select one of the options above: ')
         
         option = int(option)
         
+        # -------------- CREATE TASK ---------------
         if option == 1:
             task_name = input("\nEnter task name: ")
-            tasks = Tasks.load_tasks()
-            does_task_exist = False
-            for task in tasks:
-                if task['name'].lower().strip() == task_name.lower().strip():
-                    print('\nTask already exists.\n')
-                    does_task_exist = True
-            if not does_task_exist:
+            try:
                 Tasks.create_task(task_name)
                 print('\n>-------------------- Task created successfully --------------------<\n')
+            except Exception as e:
+                print('\nError: ', e)
 
+        # ------------- UPDATE STATUS --------------
         elif option == 2:
             task_id = input('\nEnter the task_id: ')
             new_status = input('\nEnter new status: \nPick from these options:\n1.running\n2.pending\n3.done\n4.failed\n\n ---- ')
             while new_status not in ['running', 'pending', 'done', 'failed']:
                 print('\nStatus must be one of the given options.\n')
                 new_status = input('\nEnter new status: \nPick from these options:\n1.running\n2.pending\n3.done\n4.failed\n\n ---- ')
-                
-            tasks = Tasks.load_tasks()
-            
-            is_valid_id = False
-            for task in tasks:
-                if task['id'] == task_id:
-                    is_valid_id = True
-                    if task['status'] == new_status:
-                        print(f'\nStatus is already set to {new_status}.')
-                        break
-                    task['status'] = new_status
-                    task['updated_at'] = datetime.now().isoformat()
-                    Tasks.save_tasks(tasks)
-                    print('\n>------------- Status Updated Successfully. ------------<')
-                    break
-            
-            if not is_valid_id:
-                print(f'\n>-------------- No Task associated with the Id: {task_id}. --------------<\n')        
-            
+        
+            try:
+                # update status and the tasks
+                Tasks.update_task_status(task_id, new_status)
+                print('\n>------------- Status Updated Successfully. ------------<')
+            except Exception as e:
+                print('\nError: ', e)
+               
+        # -------------- LIST TASKS ----------------
         elif option == 3:
             start_time = input('\nEnter start time: ')
             end_time = input('\nEnter end time: ')
             status = input('\nEnter status: ')
-            Tasks.list_tasks(start_time, end_time, status)
-        
+            
+            try:
+                filtered_tasks = Tasks.list_tasks(start_time, end_time, status)
+                if len(filtered_tasks) > 0:
+                    print('\n----------------------------------------------\n')
+                    for task in filtered_tasks:
+                        print(f"---> {task['name']}")
+                    print('\n----------------------------------------------\n')
+            except Exception as e:
+                print('\nError: ', e)
         else:
             print('\n-------------------------------------------------------------------- TASK TRACKER CLI -----------------------------------------------------------------\n')
             break
         
-    
 if __name__ == "__main__":
     main()
